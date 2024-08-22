@@ -1,0 +1,5 @@
+name: HoneyNoBees
+version: '1.0-SNAPSHOT'
+main: winlyps.honeyNoBees.HoneyNoBees
+api-version: '1.20'
+authors: [ Winlyps ]
