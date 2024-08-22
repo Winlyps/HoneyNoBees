@@ -8,42 +8,57 @@ import org.bukkit.block.data.type.Beehive
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockPlaceEvent
-import org.bukkit.plugin.Plugin
 import winlyps.honeyNoBees.HoneyNoBees
-import java.util.concurrent.ConcurrentHashMap
 
 class HoneyListener(private val plugin: HoneyNoBees) : Listener {
 
-    private val beehives = ConcurrentHashMap<Block, Beehive>()
-
-    init {
-        startHoneyIncreaseTask(plugin)
-    }
+    private val beehivesToUpdate = mutableSetOf<Block>()
 
     @EventHandler
     fun onBeehivePlace(event: BlockPlaceEvent) {
         val block: Block = event.block
         if (block.type == Material.BEEHIVE) {
-            val beehiveData = block.blockData as? Beehive
-            if (beehiveData != null) {
-                beehives[block] = beehiveData
-            }
+            addBeehiveToUpdate(block)
+            scheduleHoneyIncreaseTask()
         }
     }
 
-    private fun startHoneyIncreaseTask(plugin: Plugin) {
+    fun addBeehiveToUpdate(block: Block) {
+        beehivesToUpdate.add(block)
+    }
+
+    fun scheduleHoneyIncreaseTask() {
+        if (beehivesToUpdate.isNotEmpty()) {
+            Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+                for (block in beehivesToUpdate) {
+                    val beehiveData = block.blockData as? Beehive
+                    if (beehiveData != null) {
+                        beehiveData.honeyLevel = beehiveData.maximumHoneyLevel
+                        block.blockData = beehiveData
+                        block.state.update(true, false)
+                    }
+                }
+                schedulePeriodicHoneyCheck()
+            }, 100L) // 100 ticks = 5 seconds
+        }
+    }
+
+    private fun schedulePeriodicHoneyCheck() {
         Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
-            val iterator = beehives.entries.iterator()
+            val iterator = beehivesToUpdate.iterator()
             while (iterator.hasNext()) {
-                val (block, beehiveData) = iterator.next()
-                if (beehiveData.honeyLevel < beehiveData.maximumHoneyLevel) {
-                    beehiveData.honeyLevel++
-                    block.blockData = beehiveData
-                    block.state.update()
+                val block = iterator.next()
+                val beehiveData = block.blockData as? Beehive
+                if (beehiveData != null) {
+                    if (beehiveData.honeyLevel == 0) {
+                        beehiveData.honeyLevel = beehiveData.maximumHoneyLevel
+                        block.blockData = beehiveData
+                        block.state.update(true, false)
+                    }
                 } else {
                     iterator.remove()
                 }
             }
-        }, 0L, 100L).taskId // 100 ticks = 5 seconds
+        }, 200L, 200L) // 200 ticks = 10 seconds, check every 10 seconds
     }
 }
