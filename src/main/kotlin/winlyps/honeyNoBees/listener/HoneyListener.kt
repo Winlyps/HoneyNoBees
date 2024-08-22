@@ -39,7 +39,7 @@ class HoneyListener(private val plugin: HoneyNoBees) : Listener {
                     }
                 }
                 schedulePeriodicHoneyCheck()
-            }, 100L) // 100 ticks = 5 seconds
+            }, 72000L) // 72000 ticks = 1 hour
         }
     }
 
@@ -59,6 +59,6 @@ class HoneyListener(private val plugin: HoneyNoBees) : Listener {
                     iterator.remove()
                 }
             }
-        }, 200L, 200L) // 200 ticks = 10 seconds, check every 10 seconds
+        }, 72000L, 72000L) // 72000 ticks = 1 hour, check every 1 hour
     }
 }
